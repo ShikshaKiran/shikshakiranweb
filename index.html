@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shiksha Kiran — Verified Home Tutors Near You</title>
+<!-- Libraries: Supabase JS Client & Shared Logic -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="shared.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --ink: #212B26; --paper: #F2F3EF; --paper-2: #E7E9E2;
+    --indigo: #2C3E63; --marigold: #C97F2A; --line: #C4C9BE;
+    --stamp: #3F6B4E; --danger: #A6432B;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  body{ background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; line-height: 1.55; }
+  a{ color: inherit; }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 24px; }
+  header{ border-bottom: 2px solid var(--ink); padding: 20px 0; background: var(--paper); position: sticky; top:0; z-index: 50; }
+  .header-row{ display:flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .brand{ font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.4rem; cursor:pointer; }
+  .brand span{ color: var(--marigold); }
+  .header-actions{ display:flex; gap: 10px; }
+  .nav-btn{ font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 14px; border: 2px solid var(--ink); border-radius: 3px; background: transparent; cursor:pointer; color: var(--ink); }
+  .nav-btn.active{ background: var(--ink); color: var(--paper); }
+  .nav-btn.ghost{ border-color: var(--line); color: #7A7A6E; font-size: 0.68rem; }
+
+  .view{ display:none; } .view.active{ display:block; animation: fadeIn 0.35s ease both; }
+
+  @keyframes fadeUp{ from{ opacity:0; transform: translateY(14px); } to{ opacity:1; transform: translateY(0); } }
+  @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes popIn{ from{ opacity:0; transform: scale(0.96); } to{ opacity:1; transform: scale(1); } }
+
+  .hero{ padding: 52px 0 40px; animation: fadeUp 0.5s ease both; position: relative; }
+  .hero-label{ font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--stamp); display:flex; align-items:center; gap:8px; margin-bottom: 14px; }
+  .hero-label::before{ content:""; width:8px; height:8px; background: var(--stamp); border-radius:50%; display:inline-block; }
+  h1{ font-family: 'Fraunces', serif; font-weight: 600; font-size: clamp(1.9rem, 4.5vw, 2.9rem); line-height: 1.1; max-width: 20ch; letter-spacing: -0.01em; }
+  h1 em{ font-style: italic; color: var(--indigo); }
+  .hero-sub{ margin-top: 16px; max-width: 54ch; color: #4A4A42; font-size: 1.02rem; }
+
+  .grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding-bottom: 40px; }
+  .card{ background: var(--paper-2); border: 1px solid var(--line); border-radius: 5px; padding: 22px; position: relative; transition: box-shadow 0.18s ease, transform 0.18s ease; animation: fadeUp 0.4s ease both; }
+  .card:hover{ box-shadow: 4px 4px 0 var(--ink); transform: translate(-2px,-2px); }
+
+  .cta-row{ display:flex; gap: 16px; margin-top: 36px; flex-wrap: wrap; }
+  .cta-card{ flex: 1; min-width: 240px; background: var(--paper-2); border: 2px solid var(--ink); border-radius: 6px; padding: 26px; cursor: pointer; transition: box-shadow 0.15s ease, transform 0.15s ease; animation: fadeUp 0.5s ease both; }
+  .cta-card:nth-child(1){ animation-delay: 0.1s; }
+  .cta-card:nth-child(2){ animation-delay: 0.2s; }
+  .cta-card:hover{ box-shadow: 4px 4px 0 var(--ink); transform: translate(-2px,-2px); }
+  .cta-card .icon{ width: 42px; height:42px; background: var(--indigo); color: var(--paper); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; font-size:1.2rem; margin-bottom: 14px; }
+  .cta-card h3{ font-family: 'Fraunces', serif; font-size: 1.25rem; margin-bottom: 6px; }
+  .cta-card p{ font-size: 0.88rem; color: #5A5A50; }
+
+  .section-eyebrow{ font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--marigold); margin-bottom: 6px; }
+  .section-title{ font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 20px; }
+
+  .features{ padding: 48px 0; border-top: 1px solid var(--line); }
+  .feature-grid{ display:grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+  .feature-item{ padding: 18px 0; animation: fadeUp 0.5s ease both; }
+  .feature-item .num{ font-family: 'Fraunces', serif; color: var(--indigo); font-size: 1.3rem; margin-bottom: 8px; }
+  .feature-item h4{ font-family: 'Fraunces', serif; font-size: 1rem; margin-bottom: 6px; }
+  .feature-item p{ font-size: 0.85rem; color: #5A5A50; }
+
+  .about{ padding: 40px 0 56px; border-top: 1px solid var(--line); }
+  .about p{ max-width: 60ch; color: #4A4A42; font-size: 0.95rem; margin-bottom: 14px; }
+  .about-list{ max-width: 60ch; margin: 4px 0 18px 20px; padding: 0; }
+  .about-list li{ font-size: 0.95rem; color: #4A4A42; margin-bottom: 10px; line-height: 1.5; }
+  .about-list b{ color: var(--ink); font-weight: 600; }
+
+  .text-search-bar{ margin: 28px 0 12px; max-width: 640px; position: relative; }
+  .text-search-bar input{ width: 100%; border: 2px solid var(--ink); border-radius: 6px; padding: 14px 16px; font-size: 0.95rem; background: var(--paper-2); }
+  .text-search-bar input:focus{ outline: none; background: var(--paper); }
+  .suggestions-box{ display:none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 16px rgba(31,42,36,0.12); z-index: 20; overflow: hidden; }
+  .suggestions-box.active{ display:block; }
+  .suggestion-item{ padding: 10px 16px; font-size: 0.88rem; cursor: pointer; display:flex; justify-content: space-between; align-items:center; }
+  .suggestion-item:hover{ background: var(--paper-2); }
+  .suggestion-item:not(:last-child){ border-bottom: 1px solid var(--line); }
+  .suggestion-tag{ font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; text-transform: uppercase; color: #8A8A7E; }
+
+  .search-bar{ display:flex; gap: 0; margin: 28px 0 32px; border: 2px solid var(--ink); border-radius: 6px; overflow: hidden; background: var(--paper-2); max-width: 640px; }
+  .search-bar select{ flex: 1; border: none; border-radius: 0; background: transparent; padding: 14px 16px; font-size: 0.92rem; }
+  .search-bar select:focus{ outline: none; background: var(--paper); }
+
+  select, input, textarea{ font-family: 'Inter', sans-serif; font-size: 0.9rem; padding: 9px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper-2); color: var(--ink); }
+  textarea{ width: 100%; resize: vertical; min-height: 70px; }
+
+  .card-top{ display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .avatar{ width: 46px; height:46px; background: var(--indigo); color: var(--paper); border-radius: 50%; display:flex; align-items:center; justify-content:center; font-family:'Fraunces', serif; font-weight:600; font-size:1.1rem; flex-shrink:0; }
+  .badge{ font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--stamp); color: var(--paper); padding: 4px 8px; border-radius: 20px; white-space: nowrap; }
+  .card h3{ font-family: 'Fraunces', serif; font-size: 1.1rem; margin-bottom: 2px; }
+  .card .subject{ color: var(--indigo); font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; }
+  .rating-line{ font-size: 0.8rem; color: var(--marigold); font-weight: 600; margin-bottom: 8px; }
+  .meta-row{ display:flex; justify-content: space-between; font-size: 0.82rem; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .meta-row .k{ color: #7A7A6E; } .meta-row .v{ font-weight: 500; text-align:right; }
+  .card-footer{ margin-top: 14px; display:flex; justify-content: space-between; align-items:center; }
+  .price{ font-family: 'Fraunces', serif; font-size: 1rem; } .price span{ font-size: 0.72rem; color: #7A7A6E; font-family:'Inter',sans-serif; }
+  .btn-small{ font-size: 0.82rem; font-weight: 600; padding: 8px 14px; border: 2px solid var(--indigo); background: var(--indigo); color: var(--paper); border-radius: 3px; cursor: pointer; transition: transform 0.1s ease; }
+  .btn-small:active{ transform: scale(0.95); }
+  .review-list{ margin-top: 10px; font-size: 0.8rem; color: #5A5A50; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .review-list .rev{ margin-bottom: 6px; }
+
+  .form-card{ max-width: 560px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 4px; padding: 28px; margin-bottom: 40px; }
+  .form-row{ margin-bottom: 16px; }
+  .form-row label{ display:block; font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; }
+  .form-row input, .form-row select, .form-row textarea{ width: 100%; }
+  .form-actions{ margin-top: 22px; }
+  .btn-primary{ padding: 12px 24px; border-radius: 3px; font-weight: 600; border: 2px solid var(--indigo); background: var(--indigo); color: var(--paper); cursor: pointer; font-size: 0.95rem; transition: transform 0.1s ease, opacity 0.15s ease; }
+  .btn-primary:active{ transform: scale(0.97); }
+
+  .status-msg{ margin-top: 14px; font-size: 0.85rem; padding: 10px; border-radius: 3px; display:none; }
+  .status-msg.ok{ background: #E4EDE6; color: var(--stamp); display:block; animation: fadeUp 0.3s ease both; }
+  .status-msg.err{ background: #F3E3DE; color: var(--danger); display:block; animation: fadeUp 0.3s ease both; }
+
+  .empty-state, .loading{ padding: 40px 20px; text-align:center; color: #7A7A6E; font-family:'JetBrains Mono', monospace; font-size: 0.85rem; border: 1px dashed var(--line); border-radius: 4px; }
+
+  .subtabs{ display:flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .subtab-btn{ font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 9px 16px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper-2); cursor:pointer; color: var(--ink); transition: transform 0.1s ease; }
+  .subtab-btn.active{ background: var(--indigo); border-color: var(--indigo); color: var(--paper); }
+
+  .subview{ display:none; } .subview.active{ display:block; animation: fadeIn 0.3s ease both; }
+
+  .login-box{ max-width: 360px; margin: 20px 0 40px; }
+  .login-box p{ font-size: 0.85rem; color: #5A5A50; margin-bottom: 14px; }
+
+  .student-card{ background: var(--paper-2); border: 1px solid var(--line); border-radius: 5px; padding: 20px; margin-bottom: 16px; }
+  .student-card h4{ font-family: 'Fraunces', serif; font-size: 1.05rem; margin-bottom: 4px; }
+  .student-card .sub{ font-size: 0.82rem; color: #7A7A6E; margin-bottom: 14px; }
+  .attend-row{ display:flex; gap: 8px; align-items:center; flex-wrap: wrap; margin-bottom: 10px; }
+  .attend-row input[type=time]{ padding: 8px 10px; }
+  .btn-present{ padding: 8px 14px; border-radius: 3px; font-weight:600; font-size: 0.8rem; border: 2px solid var(--stamp); background: var(--stamp); color: var(--paper); cursor:pointer; }
+  .btn-absent{ padding: 8px 14px; border-radius: 3px; font-weight:600; font-size: 0.8rem; border: 2px solid var(--danger); background: transparent; color: var(--danger); cursor:pointer; }
+  .attend-history{ font-size: 0.78rem; color: #7A7A6E; margin-top: 8px; max-height: 100px; overflow-y: auto; }
+  .attend-history .hist-row{ display:flex; justify-content:space-between; padding: 3px 0; border-top: 1px dashed var(--line); }
+  .progress-box{ margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+  .progress-box textarea{ margin-bottom: 8px; }
+  .btn-tiny{ padding: 7px 12px; border-radius: 3px; font-weight:600; font-size: 0.78rem; border: 2px solid var(--indigo); background: var(--indigo); color: var(--paper); cursor:pointer; transition: transform 0.1s ease; }
+  .progress-history{ font-size: 0.8rem; color: #5A5A50; margin-top: 8px; }
+  .progress-history .p-item{ padding: 6px 0; border-top: 1px dashed var(--line); }
+
+  .req-card{ background: var(--paper-2); border: 1px solid var(--line); border-radius: 5px; padding: 18px 20px; margin-bottom: 12px; }
+  .req-card b{ font-family: 'Fraunces', serif; }
+  .req-card .sub{ font-size: 0.82rem; color: #7A7A6E; margin-top: 4px; }
+
+  footer{ padding: 24px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #7A7F76; text-align:center; background: var(--paper); border-top: 1px solid var(--line); margin-top: 40px; }
+
+  @media (max-width: 720px){ .feature-grid{ grid-template-columns: 1fr; } .cta-row{ flex-direction: column; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap header-row">
+    <div class="brand" id="brand-home">Shiksha <span>Kiran</span></div>
+    <div class="header-actions" id="header-actions"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- LANDING -->
+  <div class="view active" id="view-landing">
+    <div class="hero">
+      <div class="hero-label">Personally vetted, not just listed</div>
+      <h1>Find a home tutor near you your child will <em>actually</em> learn from.</h1>
+      <p class="hero-sub">Every tutor is verified before listing. Track attendance, read real reviews, and stay in the loop on your child's progress — all in one place.</p>
+      <div class="cta-row">
+        <div class="cta-card" id="cta-parent">
+          <div class="icon">P</div>
+          <h3>I'm a Parent</h3>
+          <p>Browse verified tutors, see reviews, and follow your child's attendance and progress.</p>
+        </div>
+        <div class="cta-card" id="cta-teacher">
+          <div class="icon">T</div>
+          <h3>I'm a Teacher</h3>
+          <p>Get listed, find students looking for tutors, and manage your classes in one dashboard.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="features">
+      <div class="section-eyebrow">What you get</div>
+      <h2 class="section-title">Built around trust, not just listings</h2>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="num">01</div><h4>Verified profiles</h4><p>Every tutor's qualification is checked before they go live.</p></div>
+        <div class="feature-item"><div class="num">02</div><h4>Daily attendance</h4><p>Tutors log each class; parents see it in real time.</p></div>
+        <div class="feature-item"><div class="num">03</div><h4>Honest reviews</h4><p>Parents rate tutors, tutors track student progress — both sides stay accountable.</p></div>
+      </div>
+    </div>
+
+    <div class="about">
+      <div class="section-eyebrow">About us</div>
+      <h2 class="section-title">Built for local parents</h2>
+      <p>You want your child to actually learn — not just be handed to whoever's available first. That's the real problem parents keep running into: no way to know if a tutor is truly qualified, no way to tell if classes are even happening once the fees start, and no way to know it's working until the report card shows up.</p>
+      <ul class="about-list">
+        <li><b>Every tutor is personally checked</b> — degree, subject knowledge, and experience — before they're ever listed.</li>
+        <li><b>You see attendance for every class</b>, marked by the tutor the same day, so you always know teaching actually happened.</li>
+        <li><b>You get real progress updates</b> from the tutor, not silence until the next exam.</li>
+        <li><b>Every tutor stays within 5km of your home</b>, so travel time doesn't eat into your child's lesson time.</li>
+        <li><b>Other parents' reviews are visible</b> on every profile, so you're never picking blind.</li>
+      </ul>
+      <p>We built this because every parent deserves a way to find a tutor that feels safe, not just convenient.</p>
+    </div>
+  </div>
+
+  <!-- PARENT HUB -->
+  <div class="view" id="view-parent">
+    <div class="hero" style="padding-bottom:0;">
+      <div class="hero-label">Parent portal</div>
+      <h1 style="font-size: clamp(1.6rem, 3.5vw, 2.2rem);">What does your child need to learn?</h1>
+      <p class="hero-sub">Search by subject and area to find a verified tutor near you.</p>
+    </div>
+    <div class="subtabs">
+      <button class="subtab-btn active" data-sub="p-browse">Browse Tutors</button>
+      <button class="subtab-btn" data-sub="p-request">Post Requirement</button>
+      <button class="subtab-btn" data-sub="p-matches">My Matches</button>
+    </div>
+
+    <div class="subview active" id="sub-p-browse">
+      <div class="text-search-bar">
+        <input type="text" id="search-query" placeholder="Search by class, subject, or area — e.g. Class 10, Mathematics, Downtown" autocomplete="off">
+        <div id="search-suggestions" class="suggestions-box"></div>
+      </div>
+      <div class="search-bar">
+        <select id="filter-subject"><option value="">What do you want to learn?</option></select>
+      </div>
+      <div id="tutor-grid" class="grid"><div class="loading">Loading tutors…</div></div>
+    </div>
+
+    <div class="subview" id="sub-p-request">
+      <div class="form-card">
+        <div class="form-row"><label>Your name</label><input type="text" id="r-name" placeholder="e.g. Priya Verma"></div>
+        <div class="form-row"><label>Your phone number</label><input type="tel" id="r-phone" placeholder="e.g. 98765 43210"></div>
+        <div class="form-row"><label>Subject(s) needed</label><input type="text" id="r-subject" placeholder="e.g. Mathematics"></div>
+        <div class="form-row"><label>Child's class level</label><input type="text" id="r-levels" placeholder="e.g. Class 8"></div>
+        <div class="form-row"><label>Your area</label><input type="text" id="r-area" placeholder="e.g. your neighborhood"></div>
+        <div class="form-row"><label>Budget per month (₹)</label><input type="number" id="r-budget" placeholder="e.g. 1500"></div>
+        <div class="form-row"><label>Anything else (optional)</label><input type="text" id="r-notes" placeholder="e.g. prefers evenings"></div>
+        <div class="form-actions"><button class="btn-primary" id="submit-requirement">Post my requirement</button></div>
+        <div class="status-msg" id="requirement-status"></div>
+      </div>
+    </div>
+
+    <div class="subview" id="sub-p-matches">
+      <div class="login-box">
+        <p>Enter the phone number you applied with to see your matched tutors, attendance, and to leave a review.</p>
+        <div class="form-row"><input type="tel" id="parent-lookup-phone" placeholder="Your phone number"></div>
+        <div class="form-row"><input type="password" id="parent-lookup-password" placeholder="Your password"></div>
+        <button class="btn-primary" id="parent-lookup-btn">View my matches</button>
+      </div>
+      <div id="parent-matches-list"></div>
+    </div>
+  </div>
+
+  <!-- TEACHER HUB -->
+  <div class="view" id="view-teacher">
+    <div class="hero" style="padding-bottom:0;">
+      <div class="hero-label">Teacher portal</div>
+      <h1 style="font-size: clamp(1.6rem, 3.5vw, 2.2rem);">Get listed, find students, manage your classes.</h1>
+    </div>
+    <div class="subtabs">
+      <button class="subtab-btn active" data-sub="t-register">Register</button>
+      <button class="subtab-btn" data-sub="t-dashboard">My Dashboard</button>
+    </div>
+
+    <div class="subview active" id="sub-t-register">
+      <div class="form-card">
+        <div class="form-row"><label>Full name</label><input type="text" id="t-name" placeholder="e.g. Ankita Sharma"></div>
+        <div class="form-row"><label>Subject(s) you teach</label><input type="text" id="t-subject" placeholder="e.g. Mathematics"></div>
+        <div class="form-row"><label>Class levels</label><input type="text" id="t-levels" placeholder="e.g. Class 6–10"></div>
+        <div class="form-row"><label>Qualification</label><input type="text" id="t-qual" placeholder="e.g. B.Sc, B.Ed"></div>
+        <div class="form-row"><label>Years of experience</label><input type="text" id="t-exp" placeholder="e.g. 3 years"></div>
+        <div class="form-row"><label>Base area (5km radius)</label><input type="text" id="t-area" placeholder="e.g. your neighborhood"></div>
+        <div class="form-row"><label>Monthly fee (₹)</label><input type="number" id="t-price" placeholder="e.g. 1500"></div>
+        <div class="form-row"><label>Your phone number</label><input type="tel" id="t-phone" placeholder="e.g. 98765 43210"></div>
+        <div class="form-row"><label>Set a password (for your dashboard login)</label><input type="password" id="t-password" placeholder="Choose a password"></div>
+        <div class="form-actions"><button class="btn-primary" id="submit-tutor">Submit my profile</button></div>
+        <div class="status-msg" id="tutor-status"></div>
+      </div>
+    </div>
+
+    <div class="subview" id="sub-t-dashboard">
+      <div id="teacher-login-box" class="login-box">
+        <p>Enter the phone number you registered with to open your dashboard. (Your profile must be approved first.)</p>
+        <div class="form-row"><input type="tel" id="teacher-lookup-phone" placeholder="Your phone number"></div>
+        <div class="form-row"><input type="password" id="teacher-lookup-password" placeholder="Your password"></div>
+        <button class="btn-primary" id="teacher-lookup-btn">Open dashboard</button>
+        <div class="status-msg" id="teacher-login-status"></div>
+      </div>
+      <div id="teacher-dashboard" style="display:none;">
+        <div class="section-eyebrow">Requirements looking for a tutor</div>
+        <h2 class="section-title">Parents currently searching</h2>
+        <div id="teacher-requirements-list"></div>
+
+        <div class="section-eyebrow" style="margin-top:36px;">Your students</div>
+        <h2 class="section-title">Attendance & progress</h2>
+        <div id="teacher-students-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Shiksha Kiran — verified home tutors, wherever you are. Contact: +91 00000 00000</footer>
+
+<!-- APPLY MODAL -->
+<div class="modal-overlay" id="apply-modal" style="display:none; position: fixed; inset:0; background: rgba(31,42,36,0.55); align-items: center; justify-content: center; z-index: 100; padding: 20px;">
+  <div class="modal-box" style="background: var(--paper); border: 2px solid var(--ink); border-radius: 5px; max-width: 380px; width:100%; padding: 26px; animation: popIn 0.2s ease both;">
+    <h3 id="modal-tutor-name" style="font-family:'Fraunces', serif; font-size: 1.2rem; margin-bottom: 6px;">Apply to this tutor</h3>
+    <p style="font-size: 0.85rem; color:#5A5A50; margin-bottom: 18px;">Share your details so we can connect you.</p>
+    <div class="form-row"><label>Your name</label><input type="text" id="modal-parent-name" placeholder="e.g. Priya Verma"></div>
+    <div class="form-row"><label>Your phone number</label><input type="tel" id="modal-parent-phone" placeholder="e.g. 98765 43210"></div>
+    <div class="form-row"><label>Child's name</label><input type="text" id="modal-child-name" placeholder="e.g. Aarav Verma"></div>
+    <div class="form-row" id="modal-password-row"><label id="modal-password-label">Set a password (for your parent dashboard)</label><input type="password" id="modal-parent-password" placeholder="Choose a password"></div>
+    <div class="status-msg err" id="modal-error" style="display:none;">Please fill in all fields.</div>
+    <div class="modal-actions" style="display:flex; gap: 10px; margin-top: 20px;">
+      <button id="modal-cancel" style="flex:1; padding: 11px; border-radius: 3px; font-weight:600; font-size:0.9rem; border: 2px solid var(--line); background: transparent; color: var(--ink); cursor:pointer;">Cancel</button>
+      <button id="modal-confirm" style="flex:1; padding: 11px; border-radius: 3px; font-weight:600; font-size:0.9rem; border: 2px solid var(--indigo); background: var(--indigo); color: var(--paper); cursor:pointer;">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  let tutors = [], applications = [], requirements = [], attendance = [], reviews = [], parentAccounts = [];
+  let pendingTutorId = null;
+  let currentTeacher = null;
+
+  // Fetch using Supabase JS Library
+  async function loadAll(){
+    try{ const { data } = await db.from('tutors').select('*'); tutors = (data || []).map(mapTutor); }catch(e){ tutors = []; }
+    try{ const { data } = await db.from('applications').select('*'); applications = (data || []).map(mapApplication); }catch(e){ applications = []; }
+    try{ const { data } = await db.from('requirements').select('*'); requirements = (data || []).map(mapRequirement); }catch(e){ requirements = []; }
+    try{ const { data } = await db.from('attendance').select('*'); attendance = (data || []).map(mapAttendance); }catch(e){ attendance = []; }
+    try{ const { data } = await db.from('reviews').select('*'); reviews = (data || []).map(mapReview); }catch(e){ reviews = []; }
+    try{ const { data } = await db.from('parent_accounts').select('*'); parentAccounts = (data || []).map(mapParentAccount); }catch(e){ parentAccounts = []; }
+  }
+
+  // Navigation
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    renderHeaderActions(name);
+    if (name === 'parent'){ populateFilters(); renderTutors(); }
+  }
+  function renderHeaderActions(current){
+    const el = document.getElementById('header-actions');
+    if (current === 'landing'){ el.innerHTML = ''; return; }
+    el.innerHTML = `<button class="nav-btn ghost" id="back-home">← Home</button>`;
+    document.getElementById('back-home').addEventListener('click', () => showView('landing'));
+  }
+  document.getElementById('brand-home').addEventListener('click', () => showView('landing'));
+  document.getElementById('cta-parent').addEventListener('click', () => showView('parent'));
+  document.getElementById('cta-teacher').addEventListener('click', () => showView('teacher'));
+
+  function setupSubtabs(containerSelector){
+    document.querySelectorAll(containerSelector + ' .subtab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const parent = btn.closest('.view');
+        parent.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+        parent.querySelectorAll('.subview').forEach(v => v.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('sub-' + btn.dataset.sub).classList.add('active');
+      });
+    });
+  }
+  setupSubtabs('#view-parent');
+  setupSubtabs('#view-teacher');
+
+  // Browse Tutors
+  function avgRating(tutorId){
+    const rs = reviews.filter(r => r.type === 'parent-to-teacher' && r.tutorId === tutorId);
+    if (rs.length === 0) return null;
+    return rs.reduce((s,r) => s + r.rating, 0) / rs.length;
+  }
+
+  function populateFilters(){
+    const subjectSel = document.getElementById('filter-subject');
+    const approved = tutors.filter(t => t.status === 'approved');
+    const subjects = [...new Set(approved.map(t => t.subject))];
+    subjectSel.innerHTML = '<option value="">What do you want to learn?</option>' + subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+
+  function renderTutors(){
+    const grid = document.getElementById('tutor-grid');
+    const subjectFilter = document.getElementById('filter-subject').value;
+    const query = document.getElementById('search-query').value.trim().toLowerCase();
+
+    let filtered = tutors.filter(t => {
+      if (t.status !== 'approved') return false;
+      if (subjectFilter && t.subject !== subjectFilter) return false;
+      if (query){
+        const combined = (t.subject + ' ' + t.levels + ' ' + t.area).toLowerCase();
+        if (!combined.includes(query)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0){ grid.innerHTML = '<div class="empty-state">No tutors match this search yet.</div>'; return; }
+
+    grid.innerHTML = filtered.map(t => {
+      const avg = avgRating(t.id);
+      const tReviews = reviews.filter(r => r.type === 'parent-to-teacher' && r.tutorId === t.id).slice(0,2);
+      return `
+      <div class="card">
+        <div class="card-top">
+          <div class="avatar" style="background:${colorFor(t.id)}">${initials(t.name)}</div>
+          <div class="badge">✓ Verified</div>
+        </div>
+        <h3>${t.name}</h3>
+        <div class="subject">${t.subject} · ${t.levels}</div>
+        ${avg ? `<div class="rating-line">${starString(avg)} (${avg.toFixed(1)})</div>` : '<div class="rating-line" style="color:#7A7A6E;">No reviews yet</div>'}
+        <div class="meta-row"><span class="k">Qualification</span><span class="v">${t.qual}</span></div>
+        <div class="meta-row"><span class="k">Area</span><span class="v">${t.area} (5km)</span></div>
+        <div class="meta-row"><span class="k">Experience</span><span class="v">${t.exp}</span></div>
+        <div class="card-footer">
+          <div class="price">₹${t.price}<span>/month</span></div>
+          <button class="btn-small" data-apply-id="${t.id}">Apply</button>
+        </div>
+        ${tReviews.length ? `<div class="review-list">${tReviews.map(r => `<div class="rev">"${r.comment}" — ${r.parentName}</div>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('[data-apply-id]').forEach(btn => btn.addEventListener('click', () => openApplyModal(btn.dataset.applyId)));
+  }
+
+  document.getElementById('filter-subject').addEventListener('change', renderTutors);
+  document.getElementById('search-query').addEventListener('input', () => { renderTutors(); showSuggestions(); });
+  document.getElementById('search-query').addEventListener('focus', showSuggestions);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.text-search-bar')) {
+      document.getElementById('search-suggestions').classList.remove('active');
+    }
+  });
+
+  function showSuggestions(){
+    const input = document.getElementById('search-query');
+    const box = document.getElementById('search-suggestions');
+    const query = input.value.trim().toLowerCase();
+    if (!query){ box.classList.remove('active'); box.innerHTML = ''; return; }
+
+    const approved = tutors.filter(t => t.status === 'approved');
+    const subjects = [...new Set(approved.flatMap(t => t.subject.split(',').map(s => s.trim())))];
+    const levels = [...new Set(approved.map(t => t.levels))];
+    const pool = [];
+    subjects.forEach(s => pool.push({ text: s, tag: 'Subject' }));
+    levels.forEach(l => pool.push({ text: l, tag: 'Class' }));
+    KNOWN_AREAS.forEach(a => pool.push({ text: a, tag: 'Area' }));
+
+    const matches = pool.filter(item => item.text.toLowerCase().includes(query)).slice(0, 6);
+    if (matches.length === 0){ box.classList.remove('active'); box.innerHTML = ''; return; }
+
+    box.innerHTML = matches.map(m => `<div class="suggestion-item" data-value="${m.text}"><span>${m.text}</span><span class="suggestion-tag">${m.tag}</span></div>`).join('');
+    box.classList.add('active');
+
+    box.querySelectorAll('.suggestion-item').forEach(el => {
+      el.addEventListener('click', () => {
+        input.value = el.dataset.value;
+        box.classList.remove('active');
+        renderTutors();
+      });
+    });
+  }
+
+  // Apply Modal
+  function updatePasswordLabel(){
+    const phone = document.getElementById('modal-parent-phone').value.trim();
+    const label = document.getElementById('modal-password-label');
+    const input = document.getElementById('modal-parent-password');
+    const nameInput = document.getElementById('modal-parent-name');
+    const existing = parentAccounts.find(p => p.phone === phone);
+    if (existing){
+      label.textContent = `Welcome back, ${existing.name} — enter your password`;
+      input.placeholder = 'Your existing password';
+      if (!nameInput.value) nameInput.value = existing.name;
+    } else {
+      label.textContent = 'Set a password (used for all your applications)';
+      input.placeholder = 'Choose a password';
+    }
+  }
+  document.getElementById('modal-parent-phone').addEventListener('input', updatePasswordLabel);
+
+  function openApplyModal(tutorId){
+    const t = tutors.find(x => x.id === tutorId); if (!t) return;
+    pendingTutorId = tutorId;
+    document.getElementById('modal-tutor-name').textContent = 'Apply to ' + t.name;
+    ['modal-parent-name', 'modal-parent-phone', 'modal-child-name', 'modal-parent-password'].forEach(id => document.getElementById(id).value = '');
+    updatePasswordLabel();
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('apply-modal').style.display = 'flex';
+  }
+  function closeApplyModal(){ document.getElementById('apply-modal').style.display = 'none'; pendingTutorId = null; }
+  document.getElementById('modal-cancel').addEventListener('click', closeApplyModal);
+  document.getElementById('apply-modal').addEventListener('click', (e) => { if (e.target.id === 'apply-modal') closeApplyModal(); });
+
+  document.getElementById('modal-confirm').addEventListener('click', async () => {
+    const t = tutors.find(x => x.id === pendingTutorId); if (!t) return;
+    const parentName = document.getElementById('modal-parent-name').value.trim();
+    const parentPhone = document.getElementById('modal-parent-phone').value.trim();
+    const childName = document.getElementById('modal-child-name').value.trim();
+    const password = document.getElementById('modal-parent-password').value;
+    const errEl = document.getElementById('modal-error');
+    if (!parentName || !parentPhone || !childName || !password){ errEl.textContent = 'Please fill in all fields, including a password.'; errEl.style.display = 'block'; return; }
+
+    const existingAccount = parentAccounts.find(p => p.phone === parentPhone);
+    if (existingAccount){
+      try{ await callAuth('parent_login', parentPhone, password); }
+      catch(e){ errEl.textContent = 'This phone number already has an account — password does not match.'; errEl.style.display = 'block'; return; }
+    } else {
+      try{
+        const { data, error } = await db.from('parent_accounts').insert({ phone: parentPhone, name: parentName, password }).select();
+        if (error) throw error;
+        parentAccounts.push(mapParentAccount(data[0]));
+      }catch(e){ errEl.textContent = 'Something went wrong creating your account. Please try again.'; errEl.style.display = 'block'; return; }
+    }
+    errEl.style.display = 'none';
+
+    try{
+      const { data, error } = await db.from('applications').insert({ tutor_id: t.id, tutor_name: t.name, parent_name: parentName, parent_phone: parentPhone, child_name: childName }).select();
+      if (error) throw error;
+      applications.unshift(mapApplication(data[0]));
+      closeApplyModal();
+      alert(`Applied! We'll personally connect you with ${t.name} soon. Use your phone number and password to check "My Matches" later.`);
+    }catch(e){
+      errEl.textContent = 'Something went wrong submitting your application. Please try again.';
+      errEl.style.display = 'block';
+    }
+  });
+
+  // Post Requirement
+  document.getElementById('submit-requirement').addEventListener('click', async () => {
+    const name = document.getElementById('r-name').value.trim();
+    const phone = document.getElementById('r-phone').value.trim();
+    const subject = document.getElementById('r-subject').value.trim();
+    const levels = document.getElementById('r-levels').value.trim();
+    const area = document.getElementById('r-area').value.trim();
+    const budget = document.getElementById('r-budget').value.trim();
+    const notes = document.getElementById('r-notes').value.trim();
+    const statusEl = document.getElementById('requirement-status');
+
+    if (!name || !phone || !subject || !area){ statusEl.className='status-msg err'; statusEl.textContent='Please fill in name, phone, subject, and area.'; return; }
+    try{
+      const { data, error } = await db.from('requirements').insert({ name, phone, subject, levels: levels||'—', area, budget: budget||'—', notes }).select();
+      if (error) throw error;
+      requirements.unshift(mapRequirement(data[0]));
+      statusEl.className='status-msg ok'; statusEl.textContent="Requirement posted! We'll reach out once we find a match.";
+      ['r-name','r-phone','r-subject','r-levels','r-area','r-budget','r-notes'].forEach(id => document.getElementById(id).value = '');
+    }catch(e){
+      statusEl.className='status-msg err'; statusEl.textContent='Something went wrong. Please try again.';
+    }
+  });
+
+  // Teacher Register
+  document.getElementById('submit-tutor').addEventListener('click', async () => {
+    const name = document.getElementById('t-name').value.trim();
+    const subject = document.getElementById('t-subject').value.trim();
+    const levels = document.getElementById('t-levels').value.trim();
+    const qual = document.getElementById('t-qual').value.trim();
+    const exp = document.getElementById('t-exp').value.trim();
+    const area = document.getElementById('t-area').value.trim();
+    const price = document.getElementById('t-price').value.trim();
+    const phone = document.getElementById('t-phone').value.trim();
+    const password = document.getElementById('t-password').value;
+    const statusEl = document.getElementById('tutor-status');
+
+    if (!name || !subject || !area || !price || !phone || !password){ statusEl.className='status-msg err'; statusEl.textContent='Please fill in name, subject, area, price, phone, and a password.'; return; }
+    try{
+      const { data, error } = await db.from('tutors').insert({ name, subject, levels: levels||'—', qual: qual||'—', exp: exp||'—', area, price, phone, password, status: 'pending' }).select();
+      if (error) throw error;
+      tutors.unshift(mapTutor(data[0]));
+      statusEl.className='status-msg ok'; statusEl.textContent='Profile submitted! It will appear once approved.';
+      ['t-name','t-subject','t-levels','t-qual','t-exp','t-area','t-price','t-phone','t-password'].forEach(id => document.getElementById(id).value = '');
+    }catch(e){
+      statusEl.className='status-msg err'; statusEl.textContent='Something went wrong. Please try again.';
+    }
+  });
+
+  // Parent Matches
+  document.getElementById('parent-lookup-btn').addEventListener('click', async () => {
+    const phone = document.getElementById('parent-lookup-phone').value.trim();
+    const password = document.getElementById('parent-lookup-password').value;
+    const container = document.getElementById('parent-matches-list');
+    if (!phone || !password){ container.innerHTML = '<div class="empty-state">Enter your phone number and password above.</div>'; return; }
+    container.innerHTML = '<div class="loading">Checking…</div>';
+    try{ await callAuth('parent_login', phone, password); }
+    catch(e){ container.innerHTML = `<div class="empty-state">${e.message}</div>`; return; }
+
+    const myApps = applications.filter(a => a.parentPhone === phone);
+    if (myApps.length === 0){ container.innerHTML = '<div class="empty-state">No matches found for this number yet.</div>'; return; }
+
+    container.innerHTML = myApps.map(app => {
+      const tutor = tutors.find(t => t.id === app.tutorId);
+      const att = attendance.filter(a => a.applicationId === app.id).sort((a,b) => b.date.localeCompare(a.date));
+      const myReview = reviews.find(r => r.type === 'parent-to-teacher' && r.applicationId === app.id);
+      return `
+      <div class="student-card">
+        <h4>${tutor ? tutor.name : app.tutorName} — teaching ${app.childName}</h4>
+        <div class="sub">${tutor ? tutor.subject + ' · ' + tutor.qual + ' · ' + tutor.area : ''}</div>
+        <div class="section-eyebrow" style="margin-top:12px;">Attendance</div>
+        <div class="attend-history">
+          ${att.length === 0 ? '<div>No attendance recorded yet.</div>' : att.map(a => `<div class="hist-row"><span>${a.date} ${a.time||''}</span><span>${a.present ? '✓ Present' : '✗ Absent'}</span></div>`).join('')}
+        </div>
+        <div class="progress-box">
+          <div class="section-eyebrow">Your review of ${tutor ? tutor.name : app.tutorName}</div>
+          ${myReview
+            ? `<div class="rating-line">${starString(myReview.rating)} — "${myReview.comment}"</div>`
+            : `<select id="rating-${app.id}"><option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - Average</option><option value="2">2 - Below average</option><option value="1">1 - Poor</option></select>
+               <textarea id="comment-${app.id}" placeholder="How is the teaching going?"></textarea>
+               <button class="btn-tiny" data-review-app="${app.id}">Submit review</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+
+    container.querySelectorAll('[data-review-app]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const appId = btn.dataset.reviewApp;
+        const app = applications.find(a => a.id === appId);
+        const rating = parseInt(document.getElementById('rating-' + appId).value, 10);
+        const comment = document.getElementById('comment-' + appId).value.trim();
+        if (!comment){ alert('Please add a short comment.'); return; }
+        try{
+          const { data, error } = await db.from('reviews').insert({ type: 'parent-to-teacher', application_id: appId, tutor_id: app.tutorId, parent_name: app.parentName, rating, comment }).select();
+          if (error) throw error;
+          reviews.unshift(mapReview(data[0]));
+          document.getElementById('parent-lookup-btn').click();
+        }catch(e){ alert('Something went wrong submitting your review. Please try again.'); }
+      });
+    });
+  });
+
+  // Teacher Dashboard Login
+  document.getElementById('teacher-lookup-btn').addEventListener('click', async () => {
+    const phone = document.getElementById('teacher-lookup-phone').value.trim();
+    const password = document.getElementById('teacher-lookup-password').value;
+    const statusEl = document.getElementById('teacher-login-status');
+    if (!phone || !password){ statusEl.className='status-msg err'; statusEl.textContent='Enter your phone number and password.'; return; }
+    statusEl.className = 'status-msg'; statusEl.textContent = 'Checking…'; statusEl.style.display = 'block';
+
+    try{
+      const result = await callAuth('teacher_login', phone, password);
+      statusEl.style.display = 'none';
+      currentTeacher = result.tutor;
+      document.getElementById('teacher-login-box').style.display = 'none';
+      document.getElementById('teacher-dashboard').style.display = 'block';
+      renderTeacherRequirements();
+      renderTeacherStudents();
+    }catch(e){
+      statusEl.className='status-msg err'; statusEl.textContent = e.message;
+    }
+  });
+
+  function renderTeacherRequirements(){
+    const el = document.getElementById('teacher-requirements-list');
+    const relevant = requirements.filter(r => r.subject.toLowerCase().includes(currentTeacher.subject.split(',')[0].trim().toLowerCase()) || true);
+    if (relevant.length === 0){ el.innerHTML = '<div class="empty-state">No open requirements right now.</div>'; return; }
+    el.innerHTML = relevant.map(r => `
+      <div class="req-card">
+        <b>${r.name}</b> needs <b>${r.subject}</b> — ${r.levels}
+        <div class="sub">${r.area} · Budget ₹${r.budget}/mo · ${r.phone}${r.notes ? ' · ' + r.notes : ''}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderTeacherStudents(){
+    const el = document.getElementById('teacher-students-list');
+    const myStudents = applications.filter(a => a.tutorId === currentTeacher.id);
+    if (myStudents.length === 0){ el.innerHTML = '<div class="empty-state">No students yet. Once a parent applies to you, they will appear here.</div>'; return; }
+
+    el.innerHTML = myStudents.map(app => {
+      const att = attendance.filter(a => a.applicationId === app.id).sort((a,b) => b.date.localeCompare(a.date));
+      const todayMarked = att.find(a => a.date === todayStr());
+      const progressNotes = reviews.filter(r => r.type === 'teacher-to-student' && r.applicationId === app.id).sort((a,b) => b.createdAt - a.createdAt);
+      return `
+      <div class="student-card">
+        <h4>${app.childName}</h4>
+        <div class="sub">Parent: ${app.parentName} (${app.parentPhone})</div>
+        <div class="section-eyebrow">Today's attendance (${todayStr()})</div>
+        ${todayMarked
+          ? `<div class="rating-line">${todayMarked.present ? '✓ Marked present' : '✗ Marked absent'} at ${todayMarked.time||'—'}</div>`
+          : `<div class="attend-row">
+              <input type="time" id="time-${app.id}">
+              <button class="btn-present" data-present="${app.id}">Present</button>
+              <button class="btn-absent" data-absent="${app.id}">Absent</button>
+             </div>`
+        }
+        <div class="attend-history">
+          ${att.length === 0 ? '<div>No history yet.</div>' : att.slice(0,5).map(a => `<div class="hist-row"><span>${a.date} ${a.time||''}</span><span>${a.present ? '✓' : '✗'}</span></div>`).join('')}
+        </div>
+        <div class="progress-box">
+          <div class="section-eyebrow">Progress notes</div>
+          <textarea id="progress-${app.id}" placeholder="e.g. Completed algebra chapter, doing well with equations"></textarea>
+          <button class="btn-tiny" data-progress="${app.id}">Add progress note</button>
+          <div class="progress-history">
+            ${progressNotes.slice(0,3).map(p => `<div class="p-item">${new Date(p.createdAt).toLocaleDateString()}: ${p.note}</div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    el.querySelectorAll('[data-present]').forEach(btn => btn.addEventListener('click', () => markAttendance(btn.dataset.present, true)));
+    el.querySelectorAll('[data-absent]').forEach(btn => btn.addEventListener('click', () => markAttendance(btn.dataset.absent, false)));
+    el.querySelectorAll('[data-progress]').forEach(btn => btn.addEventListener('click', () => addProgressNote(btn.dataset.progress)));
+  }
+
+  async function markAttendance(applicationId, present){
+    const timeInput = document.getElementById('time-' + applicationId);
+    const time = timeInput ? timeInput.value : '';
+    try{
+      const { data, error } = await db.from('attendance').insert({ application_id: applicationId, date: todayStr(), time, present }).select();
+      if (error) throw error;
+      attendance.unshift(mapAttendance(data[0]));
+      renderTeacherStudents();
+    }catch(e){ alert('Could not save attendance. Please try again.'); }
+  }
+
+  async function addProgressNote(applicationId){
+    const noteEl = document.getElementById('progress-' + applicationId);
+    const note = noteEl.value.trim();
+    if (!note) return;
+    const app = applications.find(a => a.id === applicationId);
+    try{
+      const { data, error } = await db.from('reviews').insert({ type: 'teacher-to-student', application_id: applicationId, tutor_id: app.tutorId, note }).select();
+      if (error) throw error;
+      reviews.unshift(mapReview(data[0]));
+      renderTeacherStudents();
+    }catch(e){ alert('Could not save the progress note. Please try again.'); }
+  }
+
+  // Init
+  (async function init(){
+    await loadAll();
+    populateFilters();
+    renderTutors();
+  })();
+})();
+</script>
+</body>
+</html>
