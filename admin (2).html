@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shiksha Kiran — Admin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #14181B;
+    --panel: #1E2429;
+    --panel-2: #262E34;
+    --ink: #E8E9E4;
+    --muted: #8A9099;
+    --accent: #D98E2B;
+    --ok: #4E9F6E;
+    --danger: #C25A44;
+    --line: #333B42;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; line-height: 1.5; min-height: 100vh; }
+  .wrap{ max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+  header{ border-bottom: 1px solid var(--line); padding: 20px 0; }
+  .header-row{ display:flex; justify-content: space-between; align-items:center; flex-wrap: wrap; gap: 10px; }
+  .brand{ font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.25rem; display:flex; align-items:center; gap: 10px; }
+  .brand .dot{ width: 9px; height:9px; background: var(--accent); border-radius: 50%; display:inline-block; }
+  .brand small{ font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 400; }
+
+  .menu-toggle{
+    width: 34px; height: 34px; background: transparent; border: 1px solid var(--line); border-radius: 4px;
+    display:flex; flex-direction: column; align-items:center; justify-content:center; gap: 4px; cursor:pointer;
+  }
+  .menu-toggle span{ width: 16px; height: 2px; background: var(--ink); display:block; }
+
+  .menu-panel{
+    display:none; flex-direction: column; position: absolute; left: 0; top: 100%; width: 240px;
+    background: var(--panel); border: 1px solid var(--line); border-top: none; border-radius: 0 0 6px 6px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.35); z-index: 60;
+  }
+  .menu-panel.active{ display:flex; }
+  .menu-item{
+    text-align:left; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 13px 18px; border: none; border-bottom: 1px solid var(--line); background: transparent; color: var(--muted); cursor:pointer;
+  }
+  .menu-item:last-child{ border-bottom: none; }
+  .menu-item.active{ background: var(--accent); color: #1A1A1A; font-weight: 600; }
+  header{ position: relative; }
+
+  .table-wrap{ overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+  .data-table{ width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+  .data-table th{
+    text-align:left; padding: 12px 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1px solid var(--line);
+  }
+  .data-table td{ padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  .data-table tbody tr:last-child td{ border-bottom: none; }
+  .data-table tbody tr:hover{ background: var(--panel-2); }
+
+  .view{ display:none; padding: 32px 0 60px; }
+  .view.active{ display:block; }
+
+  .view-head{ margin-bottom: 24px; }
+  .view-head h2{ font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 4px; }
+  .view-head p{ color: var(--muted); font-size: 0.9rem; }
+
+  .stat-cards{ display:grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 32px; }
+  .stat-card{ background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; }
+  .stat-card .num{ font-family: 'Fraunces', serif; font-size: 1.7rem; color: var(--accent); }
+  .stat-card .lbl{ font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+  .panel{ background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 24px; margin-bottom: 24px; }
+  .panel h3{ font-family: 'Fraunces', serif; font-size: 1.05rem; margin-bottom: 16px; }
+
+  .row{ display:flex; justify-content: space-between; align-items:center; padding: 14px 16px; background: var(--panel-2); border-radius: 5px; margin-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+  .row .info b{ font-family: 'Fraunces', serif; font-weight: 600; }
+  .row .info .sub{ font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .row-actions{ display:flex; gap: 8px; flex-wrap: wrap; }
+  .btn-approve{ padding: 7px 14px; border-radius: 4px; font-weight:600; font-size: 0.78rem; border: 1px solid var(--ok); background: var(--ok); color: #10201A; cursor: pointer; }
+  .btn-reject{ padding: 7px 14px; border-radius: 4px; font-weight:600; font-size: 0.78rem; border: 1px solid var(--danger); background: transparent; color: var(--danger); cursor: pointer; }
+  .btn-whatsapp{ padding: 7px 14px; border-radius: 4px; font-weight:600; font-size: 0.78rem; border: 1px solid #3F6B4E; background: transparent; color: #6FBE8C; cursor: pointer; text-decoration: none; display:inline-block; }
+  .pill{ font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; }
+  .pill-pending{ background: #3A2A1E; color: var(--accent); }
+  .pill-approved{ background: #1E3226; color: var(--ok); }
+  .pill-rejected{ background: #331E1E; color: var(--danger); }
+  .empty{ padding: 30px; text-align:center; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; border: 1px dashed var(--line); border-radius: 5px; }
+
+  .form-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row{ margin-bottom: 4px; }
+  .form-row.full{ grid-column: 1 / -1; }
+  .form-row label{ display:block; font-size: 0.78rem; font-weight:600; color: var(--muted); margin-bottom: 6px; }
+  .form-row input{
+    width: 100%; padding: 10px 12px; border-radius: 4px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+  }
+  .form-row select{
+    width: 100%; padding: 10px 12px; border-radius: 4px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-size: 0.9rem;
+  }
+  .form-row input:focus, .form-row select:focus{ outline: none; border-color: var(--accent); }
+  .btn-primary{
+    padding: 11px 22px; border-radius: 4px; font-weight: 600; border: 1px solid var(--accent);
+    background: var(--accent); color: #1A1A1A; cursor: pointer; font-size: 0.9rem; margin-top: 14px;
+  }
+  .status-msg{ margin-top: 12px; font-size: 0.82rem; padding: 9px 12px; border-radius: 4px; display:none; }
+  .status-msg.ok{ background: #1E3226; color: var(--ok); display:block; }
+  .status-msg.err{ background: #331E1E; color: var(--danger); display:block; }
+
+  /* GATE */
+  .gate-wrap{ min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 20px; }
+  .gate-box{ max-width: 340px; width:100%; text-align:center; }
+  .gate-box .brand{ justify-content:center; margin-bottom: 24px; font-size: 1.4rem; }
+  .gate-box input{
+    width: 100%; text-align:center; letter-spacing: 0.25em; padding: 13px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 1rem; margin-bottom: 12px;
+  }
+  .gate-box input:focus{ outline:none; border-color: var(--accent); }
+  .gate-box p{ color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; }
+  .gate-show{ display:flex; align-items:center; gap:6px; justify-content:center; font-size: 0.8rem; color: var(--muted); margin: -4px 0 14px; }
+  .gate-show input{ width:auto; margin:0; }
+  .gate-error{ font-size: 0.8rem; color: var(--danger); margin-top: 10px; min-height: 18px; }
+  .gate-box .btn-primary{ width: 100%; }
+
+  @media (max-width: 720px){
+    .stat-cards{ grid-template-columns: repeat(2,1fr); }
+    .form-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate-screen" class="gate-wrap">
+  <div class="gate-box">
+    <div class="brand"><span class="dot"></span>Shiksha Kiran — Admin</div>
+    <p>Enter your passcode to manage tutors and requirements.</p>
+    <input type="password" id="admin-passcode" placeholder="••••">
+    <label class="gate-show"><input type="checkbox" id="show-passcode"> Show passcode</label>
+    <button class="btn-primary" id="admin-unlock">Unlock dashboard</button>
+    <div class="gate-error" id="gate-error"></div>
+  </div>
+</div>
+
+<div id="dashboard-screen" style="display:none;">
+
+<header>
+  <div class="wrap header-row">
+    <button id="menu-toggle" class="menu-toggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="brand"><span class="dot"></span>Shiksha Kiran <small>ADMIN</small></div>
+    <div style="width:34px;"></div>
+  </div>
+  <div id="menu-panel" class="menu-panel">
+    <button class="menu-item active" data-view="overview">Overview</button>
+    <button class="menu-item" data-view="add-teacher">Add Teacher</button>
+    <button class="menu-item" data-view="approvals">Approvals</button>
+    <button class="menu-item" data-view="teachers-table">All Teachers</button>
+    <button class="menu-item" data-view="parents-table">All Parents</button>
+    <button class="menu-item" data-view="requirements">Requirements</button>
+    <button class="menu-item" data-view="applications">Applications</button>
+    <button class="menu-item" data-view="reset-password">Reset Password</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- OVERVIEW -->
+  <div class="view active" id="view-overview">
+    <div class="view-head">
+      <h2>Overview</h2>
+      <p>A snapshot of everything happening on the platform right now.</p>
+    </div>
+    <div class="stat-cards">
+      <div class="stat-card"><div class="num" id="ov-approved">—</div><div class="lbl">Approved tutors</div></div>
+      <div class="stat-card"><div class="num" id="ov-pending">—</div><div class="lbl">Pending approval</div></div>
+      <div class="stat-card"><div class="num" id="ov-applications">—</div><div class="lbl">Applications</div></div>
+      <div class="stat-card"><div class="num" id="ov-requirements">—</div><div class="lbl">Open requirements</div></div>
+    </div>
+    <div class="panel">
+      <h3>Registrations at a glance</h3>
+      <canvas id="overview-bar-chart" height="220"></canvas>
+    </div>
+    <div class="panel">
+      <h3>Teacher sign-ups over time</h3>
+      <canvas id="overview-line-chart" height="220"></canvas>
+    </div>
+    <div class="panel">
+      <h3>Recent activity</h3>
+      <div id="recent-activity"></div>
+    </div>
+  </div>
+
+  <!-- ADD TEACHER -->
+  <div class="view" id="view-add-teacher">
+    <div class="view-head">
+      <h2>Add a teacher directly</h2>
+      <p>For tutors you've personally recruited — this lists them immediately as approved.</p>
+    </div>
+    <div class="panel">
+      <div class="form-grid">
+        <div class="form-row"><label>Full name</label><input type="text" id="at-name" placeholder="e.g. Ankita Sharma"></div>
+        <div class="form-row"><label>Phone number</label><input type="tel" id="at-phone" placeholder="e.g. 98765 43210"></div>
+        <div class="form-row"><label>Subject(s)</label><input type="text" id="at-subject" placeholder="e.g. Mathematics"></div>
+        <div class="form-row"><label>Class levels</label><input type="text" id="at-levels" placeholder="e.g. Class 6–10"></div>
+        <div class="form-row"><label>Qualification</label><input type="text" id="at-qual" placeholder="e.g. B.Sc, B.Ed"></div>
+        <div class="form-row"><label>Experience</label><input type="text" id="at-exp" placeholder="e.g. 3 years"></div>
+        <div class="form-row"><label>Area</label><input type="text" id="at-area" placeholder="e.g. Downtown"></div>
+        <div class="form-row"><label>Monthly fee (₹)</label><input type="number" id="at-price" placeholder="e.g. 1500"></div>
+        <div class="form-row"><label>Set a password (for their dashboard login)</label><input type="password" id="at-password" placeholder="Choose a password"></div>
+      </div>
+      <button class="btn-primary" id="add-teacher-btn">Add & publish immediately</button>
+      <div class="status-msg" id="add-teacher-status"></div>
+    </div>
+  </div>
+
+  <!-- APPROVALS -->
+  <div class="view" id="view-approvals">
+    <div class="view-head">
+      <h2>Pending approvals</h2>
+      <p>Tutors who submitted themselves through the public site, waiting on your review.</p>
+    </div>
+    <div id="pending-list"></div>
+
+    <div class="view-head" style="margin-top:36px;">
+      <h2>All tutors</h2>
+      <p>Every tutor on the platform, regardless of status.</p>
+    </div>
+    <div id="all-tutors-list"></div>
+  </div>
+
+  <!-- ALL TEACHERS TABLE -->
+  <div class="view" id="view-teachers-table">
+    <div class="view-head">
+      <h2>All registered teachers</h2>
+      <p>Every teacher who has registered, with full details and registration date.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Subject</th><th>Levels</th><th>Qualification</th><th>Experience</th><th>Area</th><th>Fee</th><th>Status</th><th>Registered on</th></tr>
+        </thead>
+        <tbody id="teachers-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALL PARENTS TABLE -->
+  <div class="view" id="view-parents-table">
+    <div class="view-head">
+      <h2>All registered parents</h2>
+      <p>Every parent account created when applying to a tutor, with registration date.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Applications made</th><th>Registered on</th></tr>
+        </thead>
+        <tbody id="parents-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REQUIREMENTS -->
+  <div class="view" id="view-requirements">
+    <div class="view-head">
+      <h2>Parent requirements</h2>
+      <p>Add one manually after a phone call, or review what parents posted themselves.</p>
+    </div>
+    <div class="panel">
+      <h3>Add a requirement manually</h3>
+      <div class="form-grid">
+        <div class="form-row"><label>Parent name</label><input type="text" id="ar-name" placeholder="e.g. Priya Verma"></div>
+        <div class="form-row"><label>Phone number</label><input type="tel" id="ar-phone" placeholder="e.g. 98765 43210"></div>
+        <div class="form-row"><label>Subject(s) needed</label><input type="text" id="ar-subject" placeholder="e.g. Mathematics"></div>
+        <div class="form-row"><label>Class level</label><input type="text" id="ar-levels" placeholder="e.g. Class 8"></div>
+        <div class="form-row"><label>Area</label><input type="text" id="ar-area" placeholder="e.g. Downtown"></div>
+        <div class="form-row"><label>Budget (₹/month)</label><input type="number" id="ar-budget" placeholder="e.g. 1500"></div>
+        <div class="form-row full"><label>Notes</label><input type="text" id="ar-notes" placeholder="optional"></div>
+      </div>
+      <button class="btn-primary" id="add-req-btn">Add requirement</button>
+      <div class="status-msg" id="add-req-status"></div>
+    </div>
+
+    <div class="panel">
+      <h3>All requirements</h3>
+      <div id="requirements-list"></div>
+    </div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="view" id="view-applications">
+    <div class="view-head">
+      <h2>Applications</h2>
+      <p>Every time a parent applied to a tutor on the public site.</p>
+    </div>
+    <div id="applications-list"></div>
+  </div>
+
+  <!-- RESET PASSWORD -->
+  <div class="view" id="view-reset-password">
+    <div class="view-head">
+      <h2>Reset a password</h2>
+      <p>Confirm it's really them (call to check) before setting a new password.</p>
+    </div>
+    <div class="panel" style="max-width: 420px;">
+      <div class="form-row" style="margin-bottom: 14px;">
+        <label>Account type</label>
+        <select id="rp-type" style="width:100%;">
+          <option value="teacher">Teacher</option>
+          <option value="parent">Parent</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Their phone number</label><input type="tel" id="rp-phone" placeholder="e.g. 98765 43210"></div>
+      <div class="form-row"><label>New password</label><input type="text" id="rp-password" placeholder="Choose a new password"></div>
+      <button class="btn-primary" id="reset-password-btn">Set new password</button>
+      <div class="status-msg" id="reset-password-status"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+(function(){
+  // Real gate: the passcode is verified server-side by the admin-actions edge function.
+  // This client never contains the passcode itself.
+  const FN_URL = 'https://ftcrbygzevldpejydglc.supabase.co/functions/v1/admin-actions';
+  let ADMIN_PASSWORD = null;
+
+  let tutors = [];
+  let applications = [];
+  let requirements = [];
+  let parentAccounts = [];
+  let barChartInstance = null;
+  let lineChartInstance = null;
+
+  const SUPABASE_URL = 'https://ftcrbygzevldpejydglc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_vh-Bu0f43fKuFW_gheQCCw_1972GsTq';
+
+  async function callAdmin(action, payload){
+    let res;
+    try{
+      res = await fetch(FN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: ADMIN_PASSWORD, action, payload })
+      });
+    }catch(networkErr){
+      throw new Error('Could not reach the server. Check your internet connection and try again.');
+    }
+    let json;
+    try{ json = await res.json(); }
+    catch(parseErr){ throw new Error(`Server responded with status ${res.status} but sent back no readable message.`); }
+    if (!res.ok) throw new Error(json.error || `Request failed (status ${res.status}).`);
+    return json.data;
+  }
+
+  // Reads: still direct, since these tables are meant to be publicly browsable.
+  // Password columns are intentionally left out of every select here.
+  async function sbGet(table, query){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query || 'select=*'}`, {
+      headers: { apikey: SUPABASE_KEY }
+    });
+    if (!res.ok) throw new Error(`Failed to load ${table}`);
+    return res.json();
+  }
+  async function sbInsert(table, row){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify(row)
+    });
+    if (!res.ok) throw new Error(`Failed to insert into ${table}`);
+    const data = await res.json();
+    return data[0];
+  }
+
+  function mapTutor(r){ return { id: r.id, name: r.name, subject: r.subject, levels: r.levels, qual: r.qual, exp: r.exp, area: r.area, price: r.price, phone: r.phone, status: r.status, createdAt: new Date(r.created_at).getTime() }; }
+  function mapApplication(r){ return { id: r.id, tutorId: r.tutor_id, tutorName: r.tutor_name, parentName: r.parent_name, parentPhone: r.parent_phone, childName: r.child_name, createdAt: new Date(r.created_at).getTime() }; }
+  function mapRequirement(r){ return { id: r.id, name: r.name, phone: r.phone, subject: r.subject, levels: r.levels, area: r.area, budget: r.budget, notes: r.notes, createdAt: new Date(r.created_at).getTime() }; }
+  function mapParentAccount(r){ return { phone: r.phone, name: r.name, createdAt: new Date(r.created_at).getTime() }; }
+
+  function waLink(phone, name, context){
+    const digits = String(phone||'').replace(/\D/g,'');
+    if (!digits) return '#';
+    const withCountry = digits.length === 10 ? '91' + digits : digits;
+    const msg = encodeURIComponent(`Hello ${name}, this is regarding ${context} on Shiksha Kiran.`);
+    return `https://wa.me/${withCountry}?text=${msg}`;
+  }
+
+  async function loadAll(){
+    try{ tutors = (await sbGet('tutors', 'select=id,name,subject,levels,qual,exp,area,price,phone,status,created_at')).map(mapTutor); }catch(e){ tutors = []; }
+    try{ applications = (await sbGet('applications')).map(mapApplication); }catch(e){ applications = []; }
+    try{ requirements = (await sbGet('requirements')).map(mapRequirement); }catch(e){ requirements = []; }
+    try{ parentAccounts = (await sbGet('parent_accounts', 'select=phone,name,created_at')).map(mapParentAccount); }catch(e){ parentAccounts = []; }
+  }
+
+  function renderOverview(){
+    document.getElementById('ov-approved').textContent = tutors.filter(t => t.status === 'approved').length;
+    document.getElementById('ov-pending').textContent = tutors.filter(t => t.status === 'pending').length;
+    document.getElementById('ov-applications').textContent = applications.length;
+    document.getElementById('ov-requirements').textContent = requirements.length;
+
+    const recent = [
+      ...tutors.slice(0,3).map(t => ({ text: `Teacher listed: ${t.name} (${t.status})`, time: t.createdAt })),
+      ...applications.slice(0,3).map(a => ({ text: `${a.parentName} applied to ${a.tutorName}`, time: a.createdAt })),
+      ...requirements.slice(0,3).map(r => ({ text: `${r.name} posted a requirement for ${r.subject}`, time: r.createdAt }))
+    ].sort((a,b) => b.time - a.time).slice(0,6);
+
+    const el = document.getElementById('recent-activity');
+    el.innerHTML = recent.length === 0
+      ? '<div class="empty">No activity yet.</div>'
+      : recent.map(r => `<div class="row"><div class="info">${r.text}</div><div class="sub" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);">${new Date(r.time).toLocaleString()}</div></div>`).join('');
+
+    renderCharts();
+  }
+
+  function renderCharts(){
+    try{
+      if (typeof Chart === 'undefined'){
+        const note = '<div class="empty">Charts couldn\'t load (needs an internet connection to fetch the chart library).</div>';
+        document.getElementById('overview-bar-chart').closest('.panel').querySelector('canvas').style.display = 'none';
+        document.getElementById('overview-bar-chart').closest('.panel').insertAdjacentHTML('beforeend', note);
+        return;
+      }
+      const teachersRegistered = tutors.length;
+      const teachersMatched = new Set(applications.map(a => a.tutorId)).size;
+      const parentsRegistered = parentAccounts.length;
+
+      const barCtx = document.getElementById('overview-bar-chart');
+      if (barChartInstance) barChartInstance.destroy();
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Teachers Registered', 'Teachers Matched', 'Parents Registered'],
+          datasets: [{
+            data: [teachersRegistered, teachersMatched, parentsRegistered],
+            backgroundColor: ['#D98E2B', '#4E9F6E', '#6C93C7'],
+            borderRadius: 4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#8A9099' }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#8A9099', precision: 0 }, grid: { color: '#333B42' } }
+          }
+        }
+      });
+
+      const byDay = {};
+      tutors.forEach(t => {
+        if (!t.createdAt || isNaN(t.createdAt)) return;
+        const day = new Date(t.createdAt).toISOString().slice(0,10);
+        byDay[day] = (byDay[day] || 0) + 1;
+      });
+      const days = Object.keys(byDay).sort();
+      let running = 0;
+      const cumulative = days.map(d => (running += byDay[d]));
+
+      const lineCtx = document.getElementById('overview-line-chart');
+      if (lineChartInstance) lineChartInstance.destroy();
+      lineChartInstance = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: days,
+          datasets: [{
+            label: 'Total teachers',
+            data: cumulative,
+            borderColor: '#D98E2B',
+            backgroundColor: 'rgba(217,142,43,0.15)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#8A9099' }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#8A9099', precision: 0 }, grid: { color: '#333B42' } }
+          }
+        }
+      });
+    }catch(chartErr){
+      console.error('Chart rendering failed:', chartErr);
+    }
+  }
+
+  function renderPending(){
+    const el = document.getElementById('pending-list');
+    const pending = tutors.filter(t => t.status === 'pending');
+    el.innerHTML = pending.length === 0
+      ? '<div class="empty">No pending tutors right now.</div>'
+      : pending.map(t => `
+        <div class="row">
+          <div class="info">
+            <b>${t.name}</b> — ${t.subject} (${t.levels})
+            <div class="sub">${t.qual} · ${t.area} · ₹${t.price}/mo · ${t.phone}</div>
+          </div>
+          <div class="row-actions">
+            <a class="btn-whatsapp" target="_blank" rel="noopener" href="${waLink(t.phone, t.name, 'their tutor listing')}">WhatsApp</a>
+            <button class="btn-approve" data-approve="${t.id}">Approve</button>
+            <button class="btn-reject" data-reject="${t.id}">Reject</button>
+          </div>
+        </div>
+      `).join('');
+    el.querySelectorAll('[data-approve]').forEach(b => b.addEventListener('click', () => setStatus(b.dataset.approve, 'approved')));
+    el.querySelectorAll('[data-reject]').forEach(b => b.addEventListener('click', () => setStatus(b.dataset.reject, 'rejected')));
+  }
+
+  async function setStatus(id, status){
+    try{
+      await callAdmin('update_tutor_status', { id, status });
+      const t = tutors.find(x => x.id === id);
+      if (t) t.status = status;
+      renderAll();
+    }catch(e){
+      alert('Could not update status: ' + e.message);
+    }
+  }
+
+  function renderAllTutors(){
+    const el = document.getElementById('all-tutors-list');
+    el.innerHTML = tutors.length === 0
+      ? '<div class="empty">No tutors yet.</div>'
+      : tutors.map(t => `
+        <div class="row">
+          <div class="info"><b>${t.name}</b> — ${t.subject}<div class="sub">${t.area} · ₹${t.price}/mo · ${t.phone}</div></div>
+          <div class="row-actions">
+            <a class="btn-whatsapp" target="_blank" rel="noopener" href="${waLink(t.phone, t.name, 'their tutor listing')}">WhatsApp</a>
+            <span class="pill pill-${t.status}">${t.status}</span>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  function renderRequirements(){
+    const el = document.getElementById('requirements-list');
+    el.innerHTML = requirements.length === 0
+      ? '<div class="empty">No requirements yet.</div>'
+      : requirements.map(r => `
+        <div class="row">
+          <div class="info">
+            <b>${r.name}</b> (${r.phone}) needs <b>${r.subject}</b> — ${r.levels}
+            <div class="sub">${r.area} · Budget ₹${r.budget}/mo${r.notes ? ' · ' + r.notes : ''}</div>
+          </div>
+          <div class="row-actions">
+            <a class="btn-whatsapp" target="_blank" rel="noopener" href="${waLink(r.phone, r.name, 'their tutor request')}">WhatsApp</a>
+            <div class="sub" style="font-family:'JetBrains Mono',monospace;">${new Date(r.createdAt).toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  function renderApplications(){
+    const el = document.getElementById('applications-list');
+    el.innerHTML = applications.length === 0
+      ? '<div class="empty">No applications yet.</div>'
+      : applications.map(a => `
+        <div class="row">
+          <div class="info"><b>${a.parentName}</b> (${a.parentPhone}) applied to <b>${a.tutorName}</b></div>
+          <div class="row-actions">
+            <a class="btn-whatsapp" target="_blank" rel="noopener" href="${waLink(a.parentPhone, a.parentName, 'your tutor application')}">WhatsApp</a>
+            <div class="sub" style="font-family:'JetBrains Mono',monospace;">${new Date(a.createdAt).toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  function renderTeachersTable(){
+    const el = document.getElementById('teachers-table-body');
+    if (tutors.length === 0){ el.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px;">No teachers registered yet.</td></tr>'; return; }
+    el.innerHTML = tutors.slice().sort((a,b) => b.createdAt - a.createdAt).map(t => `
+      <tr>
+        <td>${t.name}</td>
+        <td>${t.phone}</td>
+        <td>${t.subject}</td>
+        <td>${t.levels}</td>
+        <td>${t.qual}</td>
+        <td>${t.exp}</td>
+        <td>${t.area}</td>
+        <td>₹${t.price}</td>
+        <td><span class="pill pill-${t.status}">${t.status}</span></td>
+        <td>${new Date(t.createdAt).toLocaleDateString()} ${new Date(t.createdAt).toLocaleTimeString()}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderParentsTable(){
+    const el = document.getElementById('parents-table-body');
+    if (parentAccounts.length === 0){ el.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No parents registered yet.</td></tr>'; return; }
+    el.innerHTML = parentAccounts.slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0)).map(p => {
+      const count = applications.filter(a => a.parentPhone === p.phone).length;
+      return `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.phone}</td>
+        <td>${count}</td>
+        <td>${p.createdAt ? new Date(p.createdAt).toLocaleDateString() + ' ' + new Date(p.createdAt).toLocaleTimeString() : '—'}</td>
+      </tr>
+    `;
+    }).join('');
+  }
+
+  function renderAll(){
+    renderOverview();
+    renderPending();
+    renderAllTutors();
+    renderRequirements();
+    renderApplications();
+    renderTeachersTable();
+    renderParentsTable();
+  }
+
+  async function handleAddTeacher(){
+    const name = document.getElementById('at-name').value.trim();
+    const phone = document.getElementById('at-phone').value.trim();
+    const subject = document.getElementById('at-subject').value.trim();
+    const levels = document.getElementById('at-levels').value.trim();
+    const qual = document.getElementById('at-qual').value.trim();
+    const exp = document.getElementById('at-exp').value.trim();
+    const area = document.getElementById('at-area').value.trim();
+    const price = document.getElementById('at-price').value.trim();
+    const password = document.getElementById('at-password').value;
+    const statusEl = document.getElementById('add-teacher-status');
+
+    if (!name || !phone || !subject || !area || !price || !password){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Please fill in at least name, phone, subject, area, price, and a password.';
+      return;
+    }
+
+    try{
+      const row = await callAdmin('add_teacher_approved', { name, phone, subject, levels, qual, exp, area, price, password });
+      tutors.unshift(mapTutor(row));
+
+      statusEl.className = 'status-msg ok';
+      statusEl.textContent = `${name} added and published live.`;
+      ['at-name','at-phone','at-subject','at-levels','at-qual','at-exp','at-area','at-price','at-password'].forEach(id => document.getElementById(id).value = '');
+      renderAll();
+    }catch(e){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Could not add teacher: ' + e.message;
+    }
+  }
+
+  async function handleAddRequirement(){
+    const name = document.getElementById('ar-name').value.trim();
+    const phone = document.getElementById('ar-phone').value.trim();
+    const subject = document.getElementById('ar-subject').value.trim();
+    const levels = document.getElementById('ar-levels').value.trim();
+    const area = document.getElementById('ar-area').value.trim();
+    const budget = document.getElementById('ar-budget').value.trim();
+    const notes = document.getElementById('ar-notes').value.trim();
+    const statusEl = document.getElementById('add-req-status');
+
+    if (!name || !phone || !subject || !area){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Please fill in at least name, phone, subject, and area.';
+      return;
+    }
+
+    try{
+      const row = await sbInsert('requirements', {
+        name, phone, subject, levels: levels || '—', area,
+        budget: budget || '—', notes
+      });
+      requirements.unshift(mapRequirement(row));
+
+      statusEl.className = 'status-msg ok';
+      statusEl.textContent = `Requirement for ${name} added.`;
+      ['ar-name','ar-phone','ar-subject','ar-levels','ar-area','ar-budget','ar-notes'].forEach(id => document.getElementById(id).value = '');
+      renderAll();
+    }catch(e){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Something went wrong. Please try again.';
+    }
+  }
+
+  document.getElementById('add-teacher-btn').addEventListener('click', handleAddTeacher);
+  document.getElementById('add-req-btn').addEventListener('click', handleAddRequirement);
+
+  document.getElementById('reset-password-btn').addEventListener('click', async () => {
+    const type = document.getElementById('rp-type').value;
+    const phone = document.getElementById('rp-phone').value.trim();
+    const newPassword = document.getElementById('rp-password').value.trim();
+    const statusEl = document.getElementById('reset-password-status');
+
+    if (!phone || !newPassword){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Enter both a phone number and a new password.';
+      return;
+    }
+
+    try{
+      const action = type === 'teacher' ? 'reset_tutor_password' : 'reset_parent_password';
+      const result = await callAdmin(action, { phone, newPassword });
+      statusEl.className = 'status-msg ok';
+      statusEl.textContent = `Password updated for ${result.name}. Tell them the new password directly.`;
+      document.getElementById('rp-phone').value = '';
+      document.getElementById('rp-password').value = '';
+    }catch(e){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Could not reset password: ' + e.message;
+    }
+  });
+
+  document.querySelectorAll('.menu-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.menu-item').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+      btn.classList.add('active');
+      document.getElementById('menu-panel').classList.remove('active');
+    });
+  });
+
+  document.getElementById('menu-toggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('menu-panel').classList.toggle('active');
+  });
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('menu-panel');
+    if (panel.classList.contains('active') && !e.target.closest('.menu-panel') && !e.target.closest('.menu-toggle')){
+      panel.classList.remove('active');
+    }
+  });
+
+  document.getElementById('show-passcode').addEventListener('change', (e) => {
+    document.getElementById('admin-passcode').type = e.target.checked ? 'text' : 'password';
+  });
+
+  document.getElementById('admin-unlock').addEventListener('click', async () => {
+    const errEl = document.getElementById('gate-error');
+    ADMIN_PASSWORD = document.getElementById('admin-passcode').value.trim();
+    errEl.textContent = 'Checking…';
+    try{
+      await callAdmin('list_tutors', {});
+      errEl.textContent = '';
+      document.getElementById('gate-screen').style.display = 'none';
+      document.getElementById('dashboard-screen').style.display = 'block';
+      await loadAll();
+      renderAll();
+    }catch(e){
+      ADMIN_PASSWORD = null;
+      errEl.textContent = e.message;
+    }
+  });
+  document.getElementById('admin-passcode').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('admin-unlock').click();
+  });
+})();
+</script>
+
+</body>
+</html>
