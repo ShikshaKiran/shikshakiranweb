@@ -328,9 +328,26 @@
   let pendingTutorId = null;
   let currentTeacher = null;
 
+  // Helper mapper to normalize DB fields safely
+  function safeMapTutor(d) {
+    if (typeof mapTutor === 'function') return mapTutor(d);
+    return {
+      id: d.id,
+      name: d.name || '',
+      subject: d.subject || '',
+      levels: d.levels || d.classes || '—',
+      qual: d.qual || d.qualification || '—',
+      exp: d.exp || d.experience || '—',
+      area: d.area || '',
+      price: d.price || d.fee || 0,
+      phone: d.phone || '',
+      status: d.status || 'pending'
+    };
+  }
+
   // Fetch using Supabase JS Library
   async function loadAll(){
-    try{ const { data } = await db.from('tutors').select('*'); tutors = (data || []).map(mapTutor); }catch(e){ tutors = []; }
+    try{ const { data } = await db.from('tutors').select('*'); tutors = (data || []).map(safeMapTutor); }catch(e){ tutors = []; }
     try{ const { data } = await db.from('applications').select('*'); applications = (data || []).map(mapApplication); }catch(e){ applications = []; }
     try{ const { data } = await db.from('requirements').select('*'); requirements = (data || []).map(mapRequirement); }catch(e){ requirements = []; }
     try{ const { data } = await db.from('attendance').select('*'); attendance = (data || []).map(mapAttendance); }catch(e){ attendance = []; }
@@ -447,7 +464,9 @@
     const pool = [];
     subjects.forEach(s => pool.push({ text: s, tag: 'Subject' }));
     levels.forEach(l => pool.push({ text: l, tag: 'Class' }));
-    KNOWN_AREAS.forEach(a => pool.push({ text: a, tag: 'Area' }));
+    if (typeof KNOWN_AREAS !== 'undefined') {
+      KNOWN_AREAS.forEach(a => pool.push({ text: a, tag: 'Area' }));
+    }
 
     const matches = pool.filter(item => item.text.toLowerCase().includes(query)).slice(0, 6);
     if (matches.length === 0){ box.classList.remove('active'); box.innerHTML = ''; return; }
@@ -552,7 +571,7 @@
     }
   });
 
-  // Teacher Register
+  // FIXED Teacher Register Block
   document.getElementById('submit-tutor').addEventListener('click', async () => {
     const name = document.getElementById('t-name').value.trim();
     const subject = document.getElementById('t-subject').value.trim();
@@ -565,15 +584,55 @@
     const password = document.getElementById('t-password').value;
     const statusEl = document.getElementById('tutor-status');
 
-    if (!name || !subject || !area || !price || !phone || !password){ statusEl.className='status-msg err'; statusEl.textContent='Please fill in name, subject, area, price, phone, and a password.'; return; }
-    try{
-      const { data, error } = await db.from('tutors').insert({ name, subject, levels: levels||'—', qual: qual||'—', exp: exp||'—', area, price, phone, password, status: 'pending' }).select();
-      if (error) throw error;
-      tutors.unshift(mapTutor(data[0]));
-      statusEl.className='status-msg ok'; statusEl.textContent='Profile submitted! It will appear once approved.';
+    // Basic Validation
+    if (!name || !subject || !area || !price || !phone || !password){ 
+      statusEl.className = 'status-msg err'; 
+      statusEl.textContent = 'Please fill in all required fields (Name, Subject, Area, Price, Phone, and Password).'; 
+      return; 
+    }
+
+    // Phone validation
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = 'Please enter a valid 10-digit mobile number.';
+      return;
+    }
+
+    statusEl.className = 'status-msg';
+    statusEl.textContent = 'Submitting profile...';
+    statusEl.style.display = 'block';
+
+    // Construct record payload with fallback properties matching database standard
+    const tutorData = {
+      name: name,
+      subject: subject,
+      levels: levels || '—',
+      qual: qual || '—',
+      exp: exp || '—',
+      area: area,
+      price: price,
+      phone: phone,
+      password: password,
+      status: 'pending'
+    };
+
+    try {
+      const { data, error } = await db.from('tutors').insert([tutorData]).select();
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        tutors.unshift(safeMapTutor(data[0]));
+      }
+
+      statusEl.className = 'status-msg ok'; 
+      statusEl.textContent = 'Profile submitted successfully! It will appear once approved.';
       ['t-name','t-subject','t-levels','t-qual','t-exp','t-area','t-price','t-phone','t-password'].forEach(id => document.getElementById(id).value = '');
-    }catch(e){
-      statusEl.className='status-msg err'; statusEl.textContent='Something went wrong. Please try again.';
+    } catch(err) {
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = err.message || 'Unable to save profile to database. Please verify your Supabase columns and permissions.';
     }
   });
 
@@ -600,7 +659,7 @@
         <div class="sub">${tutor ? tutor.subject + ' · ' + tutor.qual + ' · ' + tutor.area : ''}</div>
         <div class="section-eyebrow" style="margin-top:12px;">Attendance</div>
         <div class="attend-history">
-          ${att.length === 0 ? '<div>No attendance recorded yet.</div>' : att.map(a => `<div class="hist-row"><span>${a.date} ${a.time||''}</span><span>${a.present ? '✓ Present' : '✗ Absent'}</span></div>`).join('')}
+          ${att.length === 0 ? '<div>No attendance recorded yet.</div>' : att.map(a => `<div class="hist-row"><span>${a.date} ${a.time\vert{}\vert{}''}</span><span>${a.present ? '✓ Present' : '✗ Absent'}</span></div>`).join('')}
         </div>
         <div class="progress-box">
           <div class="section-eyebrow">Your review of ${tutor ? tutor.name : app.tutorName}</div>
@@ -687,14 +746,14 @@
              </div>`
         }
         <div class="attend-history">
-          ${att.length === 0 ? '<div>No history yet.</div>' : att.slice(0,5).map(a => `<div class="hist-row"><span>${a.date} ${a.time||''}</span><span>${a.present ? '✓' : '✗'}</span></div>`).join('')}
+          ${att.length === 0 ? '<div>No history yet.</div>' : att.slice(0,5).map(a => `<div class="hist-row"><span>${a.date} ${a.time\vert{}\vert{}''}</span><span>${a.present ? '✓' : '✗'}</span></div>`).join('')}
         </div>
         <div class="progress-box">
           <div class="section-eyebrow">Progress notes</div>
           <textarea id="progress-${app.id}" placeholder="e.g. Completed algebra chapter, doing well with equations"></textarea>
           <button class="btn-tiny" data-progress="${app.id}">Add progress note</button>
           <div class="progress-history">
-            ${progressNotes.slice(0,3).map(p => `<div class="p-item">${new Date(p.createdAt).toLocaleDateString()}: ${p.note}</div>`).join('')}
+            ${progressNotes.slice(0,3).map(p => `<div class="p-item">${new Date(p.createdAt).toLocaleDateString()}:${p.note}</div>`).join('')}
           </div>
         </div>
       </div>`;
