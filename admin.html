@@ -361,18 +361,27 @@
   // Password columns are intentionally left out of every select here.
   async function sbGet(table, query){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query || 'select=*'}`, {
-      headers: { apikey: SUPABASE_KEY }
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
     });
     if (!res.ok) throw new Error(`Failed to load ${table}`);
     return res.json();
   }
   async function sbInsert(table, row){
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-      body: JSON.stringify(row)
-    });
-    if (!res.ok) throw new Error(`Failed to insert into ${table}`);
+    let res;
+    try{
+      res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify(row)
+      });
+    }catch(e){
+      throw new Error('Could not reach the server. Check your internet connection and try again.');
+    }
+    if (!res.ok){
+      let detail = '';
+      try{ const j = await res.json(); detail = j.message || j.error_description || ''; }catch(e){}
+      throw new Error(detail || `Request failed (status ${res.status}).`);
+    }
     const data = await res.json();
     return data[0];
   }
@@ -676,7 +685,7 @@
       renderAll();
     }catch(e){
       statusEl.className = 'status-msg err';
-      statusEl.textContent = 'Something went wrong. Please try again.';
+      statusEl.textContent = e.message;
     }
   }
 
