@@ -1,8 +1,7 @@
-const SUPABASE_URL = 'https://rvdxrsvptrxvgimfpiui.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2ZHhyc3ZwdHJ4dmdpbWZwaXVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTQwNDUsImV4cCI6MjEwNDY3MDA0NX0.6CY97KVkuWqF5Lq-fTa-jioq0o_bdVIzFqMYv5DVRw0';
+const SUPABASE_URL = 'https://ftcrbygzevldpejydglc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vh-Bu0f43fKuFW_gheQCCw_1972GsTq';
 const AUTH_FN_URL = `${SUPABASE_URL}/functions/v1/public-auth`;
 const ADMIN_FN_URL = `${SUPABASE_URL}/functions/v1/admin-actions`;
-
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AVATAR_COLORS = ['#2C3E63', '#3F6B4E', '#D98E2B', '#A6432B'];
