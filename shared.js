@@ -24,6 +24,33 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const TUTOR_COLS = 'id,name,subject,levels,qual,exp,area,price,phone,status,created_at';
 const PARENT_COLS = 'phone,name,created_at';
 
+// SAFETY NET: if any page still calls .select('*') or .select() (including
+// .insert(...).select()) on tutors or parent_accounts, this automatically swaps
+// the '*' for the safe column list, so the database never refuses the request.
+// Pages that name their own columns are left untouched.
+(function protectPasswordTables() {
+  const SAFE = { tutors: TUTOR_COLS, parent_accounts: PARENT_COLS };
+  const rawFrom = db.from.bind(db);
+  function guard(builder, cols) {
+    return new Proxy(builder, {
+      get(target, prop) {
+        const v = Reflect.get(target, prop, target);
+        if (prop === 'select') {
+          return (c, opts) => guard(target.select(!c || String(c).trim() === '*' ? cols : c, opts), cols);
+        }
+        if (typeof v === 'function') {
+          return (...args) => {
+            const r = v.apply(target, args);
+            return r === target || (r && typeof r === 'object' && typeof r.select === 'function') ? guard(r, cols) : r;
+          };
+        }
+        return v;
+      }
+    });
+  }
+  db.from = (table) => (SAFE[table] ? guard(rawFrom(table), SAFE[table]) : rawFrom(table));
+})();
+
 const AVATAR_COLORS = ['#2C3E63', '#3F6B4E', '#D98E2B', '#A6432B'];
 const KNOWN_AREAS = [
   'Anantpur', 'Chirahula Colony', 'Padra', 'Huzur', 'Saman', 'Chorhata',
