@@ -374,9 +374,20 @@
   function starString(n){ const full = Math.round(n); return '★'.repeat(full) + '☆'.repeat(5-full); }
 
   // ---------- Supabase ----------
+  // ---------- Supabase ----------
   const SUPABASE_URL = 'https://ftcrbygzevldpejydglc.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_vh-Bu0f43fKuFW_gheQCCw_1972GsTq';
   const AUTH_FN_URL = 'https://ftcrbygzevldpejydglc.supabase.co/functions/v1/public-auth';
+
+  // The database does not let the browser read the `password` column of `tutors`
+  // and `parent_accounts`. A request for "*" (every column) on those two tables is
+  // therefore refused with 401. So for those tables we always name the columns,
+  // including the row that comes back after an insert.
+  const SAFE_COLS = {
+    tutors: 'id,name,subject,levels,qual,exp,area,price,phone,status,created_at',
+    parent_accounts: 'phone,name,created_at'
+  };
+  const authHeaders = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
 
   // Passwords are never stored or compared in this file — this calls a secure
   // server-side function instead, since the database no longer returns
@@ -400,18 +411,18 @@
   }
 
   async function sbGet(table, query){
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query || 'select=*'}`, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
-    });
-    if (!res.ok) throw new Error(`Failed to load ${table}`);
+    const q = query || ('select=' + (SAFE_COLS[table] || '*'));
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${q}`, { headers: authHeaders });
+    if (!res.ok) throw new Error(`Failed to load ${table} (status ${res.status})`);
     return res.json();
   }
   async function sbInsert(table, row){
     let res;
+    const url = `${SUPABASE_URL}/rest/v1/${table}` + (SAFE_COLS[table] ? '?select=' + SAFE_COLS[table] : '');
     try{
-      res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      res = await fetch(url, {
         method: 'POST',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        headers: { ...authHeaders, 'Content-Type': 'application/json', Prefer: 'return=representation' },
         body: JSON.stringify(row)
       });
     }catch(e){
@@ -428,30 +439,34 @@
   async function sbUpdate(table, id, changes){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
       method: 'PATCH',
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify(changes)
     });
     if (!res.ok) throw new Error(`Failed to update ${table}`);
   }
 
   // Map DB rows (snake_case) to the app's existing camelCase field names
-  function mapTutor(r){ return { id: r.id, name: r.name, subject: r.subject, levels: r.levels, qual: r.qual, exp: r.exp, area: r.area, price: r.price, phone: r.phone, password: r.password, status: r.status, createdAt: new Date(r.created_at).getTime() }; }
+  function mapTutor(r){ return { id: r.id, name: r.name, subject: r.subject, levels: r.levels, qual: r.qual, exp: r.exp, area: r.area, price: r.price, phone: r.phone, status: r.status, createdAt: new Date(r.created_at).getTime() }; }
   function mapApplication(r){ return { id: r.id, tutorId: r.tutor_id, tutorName: r.tutor_name, parentName: r.parent_name, parentPhone: r.parent_phone, childName: r.child_name, createdAt: new Date(r.created_at).getTime() }; }
   function mapRequirement(r){ return { id: r.id, name: r.name, phone: r.phone, subject: r.subject, levels: r.levels, area: r.area, budget: r.budget, notes: r.notes, createdAt: new Date(r.created_at).getTime() }; }
   function mapAttendance(r){ return { id: r.id, applicationId: r.application_id, date: r.date, time: r.time, present: r.present, createdAt: new Date(r.created_at).getTime() }; }
   function mapReview(r){ return { id: r.id, type: r.type, applicationId: r.application_id, tutorId: r.tutor_id, parentName: r.parent_name, rating: r.rating, comment: r.comment, note: r.note, createdAt: new Date(r.created_at).getTime() }; }
-  function mapParentAccount(r){ return { phone: r.phone, name: r.name, password: r.password, createdAt: new Date(r.created_at).getTime() }; }
+  function mapParentAccount(r){ return { phone: r.phone, name: r.name, createdAt: new Date(r.created_at).getTime() }; }
 
+  // Loads every table. A failure is now shown in the browser console (F12) instead of
+  // being silently ignored, so a problem like a 401 is easy to spot.
   async function loadAll(){
-    try{ tutors = (await sbGet('tutors')).map(mapTutor); }catch(e){ tutors = []; }
-    try{ applications = (await sbGet('applications')).map(mapApplication); }catch(e){ applications = []; }
-    try{ requirements = (await sbGet('requirements')).map(mapRequirement); }catch(e){ requirements = []; }
-    try{ attendance = (await sbGet('attendance')).map(mapAttendance); }catch(e){ attendance = []; }
-    try{ reviews = (await sbGet('reviews')).map(mapReview); }catch(e){ reviews = []; }
-    try{ parentAccounts = (await sbGet('parent_accounts')).map(mapParentAccount); }catch(e){ parentAccounts = []; }
-  }
-
-  // ---------- nav ----------
+    const load = async (table, mapper) => {
+      try{ return (await sbGet(table)).map(mapper); }
+      catch(e){ console.error('Shiksha Kiran:', e.message); return []; }
+    };
+    tutors = await load('tutors', mapTutor);
+    applications = await load('applications', mapApplication);
+    requirements = await load('requirements', mapRequirement);
+    attendance = await load('attendance', mapAttendance);
+    reviews = await load('reviews', mapReview);
+    parentAccounts = await load('parent_accounts', mapParentAccount);
+  }  // ---------- nav ----------
   function showView(name){
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + name).classList.add('active');
